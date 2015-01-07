@@ -3,3 +3,6 @@ generator/shell/build*
 generator/shell/sf2*
 generator/shell/testarea*
 soundfont-*
+.DS_Store
+FluidR3_GM.sf2
+/node_modules/
