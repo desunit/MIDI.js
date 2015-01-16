@@ -19,6 +19,14 @@ module.exports = function (grunt) {
 				'js/MIDI/Player.js',
 				'js/Window/DOMLoader.XMLHttp.js', // req when using XHR
 				'js/Window/DOMLoader.script.js', // req otherwise
+
+				'inc/jasmid/stream.js',
+				'inc/jasmid/midifile.js',
+				'inc/jasmid/replayer.js',
+
+				'inc/Base64.js',
+				'inc/base64binary.js'
+
 //				'js/Color/SpaceW3.js', // optional
 //				'js/MusicTheory/Synesthesia.js', // optional
 //				'js/Widgets/Loader.js', // optional
