@@ -32,6 +32,15 @@ MIDI.loadPlugin = function(conf) {
 		if (typeof(instrument) === "number") {
 			instruments[n] = MIDI.GeneralMIDI.byId[instrument].id;
 		}
+		if (typeof(instrument) === 'object'){
+			MIDI.GeneralMIDI.byName[instrument.id] = {
+				category: instrument.category,
+				id: instrument.id,
+				instrument: instrument.instrument,
+				number: Object.keys(MIDI.GeneralMIDI.byId).length + n
+			};
+			instruments[n] = instrument.id;
+		}
 	};
 	///
 	MIDI.soundfontUrl = conf.soundfontUrl || MIDI.soundfontUrl || "./soundfont/";
