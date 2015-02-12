@@ -70,13 +70,15 @@ function Replayer(midiFile, timeWarp, eventProcessor) {
 	//
 	function processEvents() {
 		function processNext() {
+			var beatsToGenerate;
+			var secondsToGenerate;
 			if ( midiEvent.event.type == "meta" && midiEvent.event.subtype == "setTempo" ) {
 				// tempo change events can occur anywhere in the middle and affect events that follow
 				beatsPerMinute = 60000000 / midiEvent.event.microsecondsPerBeat;
 			} 
 			if (midiEvent.ticksToEvent > 0) {
-				var beatsToGenerate = midiEvent.ticksToEvent / ticksPerBeat;
-				var secondsToGenerate = beatsToGenerate / (beatsPerMinute / 60);
+				beatsToGenerate = midiEvent.ticksToEvent / ticksPerBeat;
+				secondsToGenerate = beatsToGenerate / (beatsPerMinute / 60);
 			}
 			var time = (secondsToGenerate * 1000 * timeWarp) || 0;
 			temporal.push([ midiEvent, time]);
