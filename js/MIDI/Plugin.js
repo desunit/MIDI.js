@@ -189,9 +189,16 @@ if (window.AudioContext || window.webkitAudioContext) (function () {
 		} else { // chrome
 			source.gainNode = ctx.createGainNode();
 		}
-		var value = (velocity * MIDI.channels[channel].volume / 127) * (masterVolume / 127) * 2 - 1;
+		function getGainValue(vol, channelVol, masterVol){
+			return Math.max(-1, (vol * channelVol / 127) * (masterVol / 127) * 2 - 1);
+		}
 		source.gainNode.connect(ctx.destination);
-		source.gainNode.gain.value = Math.max(-1, value);
+		source.gainNode.gain.value = getGainValue(velocity, MIDI.channels[channel].volume, masterVolume);
+		source.setChannelVolume = function(vol){
+			source.gainNode.gain.cancelScheduledValues(ctx.currentTime);
+			source.gainNode.gain.value = getGainValue(velocity, vol, masterVolume);
+		};
+		source.channel = channel;
 		source.connect(source.gainNode);
 		if (source.noteOn) { // old api
 			source.noteOn(delay || 0);
@@ -605,7 +612,17 @@ MIDI.channels = (function () { // 0 - 15 channels
 	}
 	return channels;
 })();
-
+MIDI.setChannelVolume = function(val, channel){
+	MIDI.channels[channel].volume = val;
+	if(MIDI.api === "webaudio"){
+		for(var i = 0; i < MIDI.Player.eventQueue.length; i++){
+			var event = MIDI.Player.eventQueue[i];
+			if (event && event.source && typeof event.source.setChannelVolume === 'function' && event.source.channel === channel){
+				event.source.setChannelVolume(val);
+			}
+		}
+	}
+};
 //
 MIDI.pianoKeyOffset = 21;
 
