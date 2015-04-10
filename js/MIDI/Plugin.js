@@ -61,7 +61,7 @@ var setPlugin = function(root) {
 	};
 
 	root.noteOn = function (channel, note, velocity, delay) {
-		output.send([0x90 + channel, note, velocity], delay * 1000);
+		output.send([0x90 + channel, note, velocity * MIDI.channels[channel].volume], delay * 1000);
 	};
 
 	root.noteOff = function (channel, note, delay) {
@@ -71,7 +71,7 @@ var setPlugin = function(root) {
 	root.chordOn = function (channel, chord, velocity, delay) {
 		for (var n = 0; n < chord.length; n ++) {
 			var note = chord[n];
-			output.send([0x90 + channel, note, velocity], delay * 1000);
+			output.send([0x90 + channel, note, velocity * MIDI.channels[channel].volume], delay * 1000);
 		}
 	};
 	
@@ -189,9 +189,16 @@ if (window.AudioContext || window.webkitAudioContext) (function () {
 		} else { // chrome
 			source.gainNode = ctx.createGainNode();
 		}
-		var value = (velocity / 127) * (masterVolume / 127) * 2 - 1;
+		function getGainValue(vol, channelVol, masterVol){
+			return Math.max(-1, (vol * channelVol / 127) * (masterVol / 127) * 2 - 1);
+		}
 		source.gainNode.connect(ctx.destination);
-		source.gainNode.gain.value = Math.max(-1, value);
+		source.gainNode.gain.value = getGainValue(velocity, MIDI.channels[channel].volume, masterVolume);
+		source.setChannelVolume = function(vol){
+			source.gainNode.gain.cancelScheduledValues(ctx.currentTime);
+			source.gainNode.gain.value = getGainValue(velocity, vol, masterVolume);
+		};
+		source.channel = channel;
 		source.connect(source.gainNode);
 		if (source.noteOn) { // old api
 			source.noteOn(delay || 0);
@@ -313,7 +320,7 @@ if (window.Audio) (function () {
 		var audio = channels[nid];
 		channelInstrumentNoteIds[ nid ] = instrumentNoteId;
 		audio.src = MIDI.Soundfont[instrumentId][note.id];
-		audio.volume = volume / 127;
+		audio.volume = (volume * MIDI.channels[channel].volume) / 127;
 		audio.play();
 		channel_nid = nid;
 	};
@@ -451,10 +458,10 @@ if (window.Audio) (function () {
 		if (!notes[note]) return;
 		if (delay) {
 			return window.setTimeout(function() { 
-				notes[note].play({ volume: velocity * 2 });
+				notes[note].play({ volume: (velocity * MIDI.channels[channel].volume * 2) });
 			}, delay * 1000);
 		} else {
-			notes[note].play({ volume: velocity * 2 });
+			notes[note].play({ volume: (velocity * MIDI.channels[channel].volume * 2) });
 		}
 	};
 
@@ -465,12 +472,13 @@ if (window.Audio) (function () {
 	root.chordOn = function (channel, chord, velocity, delay) {
 		if (!MIDI.channels[channel]) return;
 		var instrument = MIDI.channels[channel].instrument;
+		var channelVolume = MIDI.channels[channel].volume;
 		var id = MIDI.GeneralMIDI.byId[instrument].number;
 		for (var key in chord) {
 			var n = chord[key];
 			var note = id + "" + noteReverse[n];
 			if (notes[note]) {
-				notes[note].play({ volume: velocity * 2 });
+				notes[note].play({ volume: (velocity * 2) * channelVolume });
 			}
 		}
 	};
@@ -598,12 +606,23 @@ MIDI.channels = (function () { // 0 - 15 channels
 			mute: false,
 			mono: false,
 			omni: false,
-			solo: false
+			solo: false,
+			volume: 1
 		};
 	}
 	return channels;
 })();
-
+MIDI.setChannelVolume = function(val, channel){
+	MIDI.channels[channel].volume = val;
+	if(MIDI.api === "webaudio"){
+		for(var i = 0; i < MIDI.Player.eventQueue.length; i++){
+			var event = MIDI.Player.eventQueue[i];
+			if (event && event.source && typeof event.source.setChannelVolume === 'function' && event.source.channel === channel){
+				event.source.setChannelVolume(val);
+			}
+		}
+	}
+};
 //
 MIDI.pianoKeyOffset = 21;
 

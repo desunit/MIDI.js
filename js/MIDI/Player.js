@@ -136,6 +136,7 @@ root.loadFile = function (file, callback) {
 // Playing the audio
 
 var eventQueue = []; // hold events to be triggered
+root.eventQueue = eventQueue;
 var queuedTime; // 
 var startTime = 0; // to measure time elapse
 var noteRegistrar = {}; // get event for requested note
