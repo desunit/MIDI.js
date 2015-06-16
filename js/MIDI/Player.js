@@ -28,6 +28,15 @@ root.resume = function () {
 	startAudio(root.currentTime);
 };
 
+root.startFrom = function (position, isPercent) {
+	if(isPercent){
+		root.currentTime = root.endTime * position
+	}else{
+		root.currentTime = position;
+	}
+	startAudio(root.currentTime);
+};
+
 root.pause = function () {
 	var tmp = root.restart;
 	stopAudio();
