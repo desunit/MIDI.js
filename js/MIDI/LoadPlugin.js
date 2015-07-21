@@ -33,12 +33,14 @@ MIDI.loadPlugin = function(conf) {
 			instruments[n] = MIDI.GeneralMIDI.byId[instrument].id;
 		}
 		if (typeof(instrument) === 'object'){
-			MIDI.GeneralMIDI.byName[instrument.id] = {
+			var inst = {
 				category: instrument.category,
 				id: instrument.id,
 				instrument: instrument.instrument,
 				number: Object.keys(MIDI.GeneralMIDI.byId).length + n
 			};
+			MIDI.GeneralMIDI.byName[instrument.id] = inst;
+			MIDI.GeneralMIDI.byId[inst.number] = inst;
 			instruments[n] = instrument.id;
 		}
 	};
