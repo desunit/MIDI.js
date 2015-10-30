@@ -206,7 +206,7 @@ var startAudio = function (currentTime, fromCache) {
 		root.endTime = getLength();
 	}
 	var note;
-	var offset = 0;
+	var offset = currentTime;
 	var messages = 0;
 	var data = root.data;	
 	var ctx = getContext();
@@ -218,7 +218,6 @@ var startAudio = function (currentTime, fromCache) {
 	for (var n = 0; n < length && messages < 20000; n++) {
 		queuedTime += data[n][1];
 		if (queuedTime < currentTime) {
-			offset = queuedTime;
 			continue;
 		}
 		currentTime = queuedTime - offset;
