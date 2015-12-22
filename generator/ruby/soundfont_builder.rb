@@ -31,9 +31,17 @@ include FileUtils
 
 BUILD_DIR = "../../soundfont"            # Output path
 SOUNDFONT = "./FluidR3_GM.sf2"        # Soundfont file path
+CHANNEL = 0
+
 
 # This script will generate MIDI.js-compatible instrument JS files for
 # all instruments in the below array. Add or remove as necessary.
+
+if CHANNEL == 9
+INSTRUMENTS = [
+    0
+]
+else
 INSTRUMENTS = [
   # 0,     # Acoustic Grand Piano
   # 24,    # Acoustic Guitar (nylon)
@@ -179,6 +187,7 @@ INSTRUMENTS = [
   126,
   127
 ]
+end
 
 # The encoders and tools are expected in your PATH. You can supply alternate
 # paths by changing the constants below.
@@ -261,9 +270,9 @@ def generate_midi(program, note_value, file)
   track = Track.new(seq)
 
   seq.tracks << track
-  track.events << ProgramChange.new(0, Integer(program))
-  track.events << NoteOn.new(0, note_value, VELOCITY, 0) # channel, note, velocity, delta
-  track.events << NoteOff.new(0, note_value, VELOCITY, DURATION)
+  track.events << ProgramChange.new(CHANNEL, Integer(program))
+  track.events << NoteOn.new(CHANNEL, note_value, VELOCITY, 0) # channel, note, velocity, delta
+  track.events << NoteOff.new(CHANNEL, note_value, VELOCITY, DURATION)
 
   File.open(file, 'wb') { | file | seq.write(file) }
 end
@@ -277,9 +286,9 @@ def midi_to_audio(source, target)
   digest = Digest::SHA1.hexdigest source
   raw_file = FLUIDSYNTH_RAW % [digest]
   run_command "#{FLUIDSYNTH} -C 1 -R 1 -g 0.5 -F #{raw_file} #{SOUNDFONT} #{source}"
-  run_command "#{SOX} -b 16 -c 2 -s -r 44100 #{raw_file} #{target}"
+  run_command "#{SOX} -b 16 -c 2 -e signed-integer -r 44100 #{raw_file} #{target}"
   run_command "#{OGGENC} -m 32 -M 64 #{target}"
-  run_command "#{LAME} -v -b 8 -B 32 #{target}"
+  run_command "#{LAME} -v -b 32 -B 64 #{target}"
   rm target
 end
 
@@ -308,7 +317,7 @@ end
 
 def generate_audio(program)
   include MIDI
-  instrument = GM_PATCH_NAMES[program]
+  instrument = CHANNEL == 9 ? "drums" : GM_PATCH_NAMES[program]
   program_key = instrument.downcase.gsub(/[^a-z0-9 ]/, "").gsub(/\s+/, "_")
 
   puts "Generating audio for: " + instrument + "(#{program_key})"
